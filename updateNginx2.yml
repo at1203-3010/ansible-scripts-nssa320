@@ -1,0 +1,17 @@
+- name: Update load-balancer.conf
+  hosts: load_balancer
+  become: yes  # Use sudo to gain root privileges
+  tasks:
+    - name: Replace references to http://pool1 with http://pool2
+      replace:
+        path: /etc/nginx/conf.d/load-balancer.conf
+        regexp: 'http://pool1'
+        replace: 'http://pool2'
+      notify:
+        - Reload nginx
+
+handlers:
+    - name: Reload nginx
+      service:
+        name: nginx
+        state: reloaded

@@ -1,0 +1,19 @@
+---
+- name: Deploy Alternate Index File to Web Servers
+  hosts: pool1
+  become: yes
+  become_method: sudo
+  become_user: root
+  tasks:
+    - name: Copy the alternate index.html to the web servers
+      copy:
+        src: /home/student/Downloads/explore_california/versions/index2.html
+        dest: /home/student/explore_california/explore_california/index.html
+        owner: student
+        group: student
+        mode: '0644'
+
+    - name: Restart Apache to apply changes
+      service:
+        name: httpd
+        state: restarted

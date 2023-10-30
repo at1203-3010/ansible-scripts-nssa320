@@ -1,0 +1,12 @@
+---
+- name: Install Zabbix Server on CentOS7.5
+  hosts: ansibleserver
+  become: yes
+  become_method: sudo
+  become_user: root
+  tasks:
+        - name: Update server
+          dnf: 
+                name: "*"
+                state: latest
+        

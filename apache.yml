@@ -1,0 +1,86 @@
+---
+- name: Create a web server
+  hosts: testserver
+  become: yes
+  become_method: sudo
+  become_user: root
+  tasks: 
+        - name: Install the latest version of Apache
+          yum: 
+                name: httpd
+                state: latest
+
+        - name: Checking if Explore California exists on server 
+          stat: 
+                path: "/home/student/explore_california"
+          register: exist
+
+        - name: Make an Explore California Folder 
+          file:
+                path: /home/student/explore_california
+                state: directory
+          when: not exist.stat.exists
+
+        - name: Move Explore California to Server
+          copy:
+                src: /home/student/Downloads/explore_california
+                dest: /home/student/explore_california
+          when: not exist.stat.exists
+        
+        - name: Change permissions of make california folder
+          file: 
+                path: /home/student/explore_california
+                mode: 0777
+                state: directory
+                recurse: yes
+
+        - name: Change Apache Configuration File
+          replace: 
+                path: /etc/httpd/conf/httpd.conf
+                regexp: 'DocumentRoot ".*"'
+                replace: 'DocumentRoot "/home/student/explore_california/explore_california"'
+
+        - name: Adding options for httpd config file
+          blockinfile:
+                path: /etc/httpd/conf/httpd.conf
+                block: |
+                        <Directory /var/www/html/>
+                                Options -Indexes -FollowSymLinks -ExecCGI -Includes
+                                AllowOverride None
+                                Require all granted
+                        </Directory>
+                state: present
+
+        - name: Changing all instances of /var/www to our homepage
+          replace: 
+                path: /etc/httpd/conf/httpd.conf
+                regexp: '/var\/www'
+                replace: '/home/student/explore_california/explore_california'
+
+        - name: Adding server name to file
+          lineinfile:
+                path: /etc/httpd/conf/httpd.conf
+                line: "ServerName 192.168.194.140"
+                state: present
+                
+        - name: Starting the httpd service
+          service: 
+                name: httpd
+                state: started
+
+        - name: Enabling the httpd service
+          service:
+                name: httpd
+                enabled: yes
+
+        - name: Restarting the httpd service
+          service: 
+                name: httpd
+                state: restarted
+
+        - name: Open firewall
+          firewalld: 
+                service: http
+                state: enabled
+                immediate: true
+                permanent: true
